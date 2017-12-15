@@ -36,11 +36,10 @@ public class MovieReviewSentimentAnalyzer implements SentimentAnalyzer
     private void readReviewsFileName(String reviewsFileName)
     {
         sentimentDictionary = new HashMap<String, Word>();
-        List<String> reviews;
         try (Stream<String> stream = Files.lines(Paths.get(reviewsFileName)))
         {
-            reviews = stream.map(String::toLowerCase).map(l -> l.replaceAll("[.,?!;:`'\"]", "")).map(String::trim)
-                    .collect(Collectors.toList());
+            List<String> reviews = stream.map(String::toLowerCase).map(l -> l.replaceAll("[.,?!;:`'\"]", ""))
+                    .map(String::trim).collect(Collectors.toList());
             for (String review : reviews)
             {
                 putWordsFromReviewInDictionary(review);
@@ -60,7 +59,8 @@ public class MovieReviewSentimentAnalyzer implements SentimentAnalyzer
         for (int i = 1; i < wordsInReview.length; ++i)
         {
             wordsInReview[i] = wordsInReview[i].trim();
-            if (!stopWords.contains(wordsInReview[i]) && !wordsInReview[i].isEmpty())
+            if (!stopWords.contains(wordsInReview[i]) && !wordsInReview[i].isEmpty() && !wordsInReview[i].equals("s")
+                    && !wordsInReview[i].equals("nt"))
             {
                 if (sentimentDictionary.containsKey(wordsInReview[i]))
                 {
@@ -68,7 +68,7 @@ public class MovieReviewSentimentAnalyzer implements SentimentAnalyzer
                 }
                 else
                 {
-                    sentimentDictionary.put(wordsInReview[i], new Word(wordsInReview[i], score));
+                    sentimentDictionary.put(wordsInReview[i], new Word(score));
                 }
             }
         }
@@ -111,14 +111,15 @@ public class MovieReviewSentimentAnalyzer implements SentimentAnalyzer
         String words = review.toLowerCase().replaceAll("[.,?!;:`'\"]", "").trim();
         String delimiter = " ";
         return Pattern.compile(delimiter).splitAsStream(words).filter(s -> !stopWords.contains(s))
-                .collect(Collectors.toList());
+                .filter(s -> sentimentDictionary.containsKey(s)).collect(Collectors.toList());
     }
 
 
     @Override
     public String getReviewSentimentAsName(String review)
     {
-        double sentimentScore = getReviewSentiment(review);
+        double sentimentScore = -1;
+        sentimentScore = getReviewSentiment(review);
         switch ((int) Math.round(sentimentScore))
         {
             case 0:
